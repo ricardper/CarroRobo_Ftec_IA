@@ -1,0 +1,1 @@
+Para compilar use o vscode com a extencao PlatformIO IDE
