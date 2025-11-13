@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <style>
+      .arrows {
+        font-size:30px;
+        color:red;
+      }
+      td.button {
+        background-color:black;
+        border-radius:25%;
+        box-shadow: 5px 5px #888888;
+      }
+      td.button:active {
+        transform: translate(5px,5px);
+        box-shadow: none; 
+      }
+      .noselect {
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        -khtml-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+      }
+      .slidecontainer {
+        width: 100%;
+      }
+      .slider {
+        -webkit-appearance: none;
+        width: 100%;
+        height: 15px;
+        border-radius: 5px;
+        background: #d3d3d3;
+        outline: none;
+        opacity: 0.7;
+        transition: opacity .2s;
+      }
+      .slider:hover { opacity: 1; }
+      .slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 25px;
+        height: 25px;
+        border-radius: 50%;
+        background: red;
+        cursor: pointer;
+      }
+      .slider::-moz-range-thumb {
+        width: 25px;
+        height: 25px;
+        border-radius: 50%;
+        background: red;
+        cursor: pointer;
+      }
+
+      /* Área de console */
+      #console {
+        width: 400px;
+        height: 120px;
+        background-color: #1e1e1e;
+        color: #00ff00;
+        font-family: monospace;
+        font-size: 14px;
+        border: 1px solid #333;
+        padding: 5px;
+        margin-top: 5px;
+        overflow-y: auto;
+        text-align: left;
+      }
+    </style>
+  </head>
+  <body class="noselect" align="center" style="background-color:white">
+    <table id="mainTable" style="width:400px;margin:auto;table-layout:fixed" CELLSPACING=8>
+      <tr>
+        <td colspan="3">
+          <img id="cameraImage" src="" style="width:250px;height:120px">
+        </td>
+      </tr>
+
+      <tr>
+        <td colspan="3">
+          <div id="newBox" style="width:300px;height:200px;margin:auto;background-color:#e0e0e0;border:1px solid #ccc;"></div>
+        </td>
+      </tr>
+
+      <tr>
+        <td></td>
+        <td class="button" 
+            ontouchstart='sendButtonInput("frente","1")' 
+            ontouchend='sendButtonInput("frente","-1")'
+            onmousedown='sendButtonInput("frente","1")'
+            onmouseup='sendButtonInput("frente","-1")'>
+          <span class="arrows">&#8679;</span>
+        </td>
+        <td></td>
+      </tr>
+
+      <tr>
+        <td class="button" 
+            ontouchstart='sendButtonInput("esquerda","3")'
+            ontouchend='sendButtonInput("esquerda","-3")'
+            onmousedown='sendButtonInput("esquerda","3")'
+            onmouseup='sendButtonInput("esquerda","-3")'>
+          <span class="arrows">&#8678;</span>
+        </td>
+        <td class="button" 
+            ontouchstart='sendButtonInput("parar","0")'
+            ontouchend='sendButtonInput("parar","0")'
+            onmousedown='sendButtonInput("parar","0")'
+            onmouseup='sendButtonInput("parar","0")'>
+          <span class="arrows">&#9634;</span>
+        </td>
+        <td class="button" 
+            ontouchstart='sendButtonInput("direita","4")'
+            ontouchend='sendButtonInput("direita","-4")'
+            onmousedown='sendButtonInput("direita","4")'
+            onmouseup='sendButtonInput("direita","-4")'>
+          <span class="arrows">&#8680;</span>
+        </td>
+      </tr>
+
+      <tr>
+        <td></td>
+        <td class="button" 
+            ontouchstart='sendButtonInput("traz","2")'
+            ontouchend='sendButtonInput("traz","-2")'
+            onmousedown='sendButtonInput("traz","2")'
+            onmouseup='sendButtonInput("traz","-2")'>
+          <span class="arrows">&#8681;</span>
+        </td>
+        <td></td>
+      </tr>
+
+      <tr>
+        <td style="text-align:left"><b>Velocidade:</b><span id="VelocidadeValor">0</span></td>
+        <td colspan="2">
+          <div class="slidecontainer">
+            <input type="range" min="-100" max="100" step="20" value="0" class="slider" id="Velocidade"
+                   oninput='sendButtonInput("Velocidade",value); updateSliderValue("Velocidade", value);'>
+          </div>
+        </td>
+      </tr>        
+
+      <tr>
+        <td style="text-align:left"><b>Direcao:</b><span id="DirecaoValor">0</span></td>
+        <td colspan="2">
+          <div class="slidecontainer">
+            <input type="range" min="30" max="140" step="5" value="85" class="slider" id="Direcao"
+                   oninput='sendButtonInput("Direcao",value); updateSliderValue("Direcao", value);'>
+          </div>
+        </td>
+      </tr> 
+
+      <!-- Console -->
+      <tr>
+        <td colspan="3">
+          <div id="console"></div>
+        </td>
+      </tr><!-- Linha com textbox e botões -->
+<tr>
+  <td colspan="3" style="text-align:center;">
+    <input type="text" id="textInput" 
+           placeholder="Digite um comando..." 
+           style="width:170px;height:20px;font-size:14px;padding:3px;margin-right:0px;">
+    
+    <button onclick="enviarComando()" 
+            style="width:60px;height:32px;background-color:#4CAF50;color:white;border:none;border-radius:5px;">Enviar</button>
+    
+    <button onclick="limparConsole()" 
+            style="width:70px;height:32px;background-color:#f44336;color:white;border:none;border-radius:5px;">Medicao</button>
+    
+    <button onclick="recarregarPagina()" 
+            style="width:60px;height:32px;background-color:#2196F3;color:white;border:none;border-radius:5px;">debug</button>
+  </td>
+</tr>
+
+
+
+    </table>
+
+    <script>
+      var webSocketCameraUrl = "ws://" + window.location.hostname + "/Camera";
+      var webSocketCarInputUrl = "ws://" + window.location.hostname + "/Carro";      
+      var websocketCamera;
+      var websocketCarInput;
+
+      function updateSliderValue(key, value) {
+        var valueSpan = document.getElementById(key + "Valor");
+        if (valueSpan) valueSpan.textContent = value;
+      }
+
+      // --- Função que adiciona texto ao console e mantém apenas 300 linhas ---
+      function appendToConsole(text) {
+        const consoleDiv = document.getElementById("console");
+        const newLine = document.createElement("div");
+        newLine.textContent = text;
+        consoleDiv.appendChild(newLine);
+        while (consoleDiv.children.length > 300) {
+          consoleDiv.removeChild(consoleDiv.firstChild);
+        }
+        consoleDiv.scrollTop = consoleDiv.scrollHeight;
+      }
+
+      function initCameraWebSocket() {
+        websocketCamera = new WebSocket(webSocketCameraUrl);
+        websocketCamera.binaryType = 'blob';
+        websocketCamera.onclose = function() { setTimeout(initCameraWebSocket, 2000); };
+        websocketCamera.onmessage = function(event) {
+          const imageId = document.getElementById("cameraImage");
+          imageId.src = URL.createObjectURL(event.data);
+        };
+      }
+
+      function initCarInputWebSocket() {
+        websocketCarInput = new WebSocket(webSocketCarInputUrl);
+        websocketCarInput.onopen = function() {
+          sendButtonInput("Velocidade", document.getElementById("Velocidade").value);
+          sendButtonInput("Direcao", document.getElementById("Direcao").value);
+        };
+        websocketCarInput.onclose = function() { setTimeout(initCarInputWebSocket, 2000); };
+
+        websocketCarInput.onmessage = function(event) {
+          var msg = event.data;
+          var parts = msg.split(',');
+          if (parts.length === 2) {
+            var key = parts[0].trim();   
+            var value = parts[1].trim();
+            
+            // Se for mensagem de console -> imprime no painel
+            if (key === "console") {
+              appendToConsole(msg);
+              return;
+            }
+
+            // Atualiza sliders se aplicável
+            var slider = document.getElementById(key);
+            if (slider) {
+              slider.value = value;
+              updateSliderValue(key, value);
+            }
+          }
+        };
+      }
+
+      function initWebSocket() {
+        initCameraWebSocket();
+        initCarInputWebSocket();
+      }
+
+      function sendButtonInput(key, value) {
+        var data = key + "," + value;
+        websocketCarInput.send(data);
+      }
+
+      window.onload = initWebSocket;
+      document.getElementById("mainTable").addEventListener("touchend", function(event) {
+        event.preventDefault();
+      });
+    </script>
+  </body>    
+</html>
