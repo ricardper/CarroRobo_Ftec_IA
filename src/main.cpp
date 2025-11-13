@@ -70,5 +70,10 @@ void loop()
     desviarObstaculo();
 
     */
+
+
+    desviarObstaculo();
+    
   }
+
 }
