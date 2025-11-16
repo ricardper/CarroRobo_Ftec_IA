@@ -3,15 +3,23 @@
 #define _WEB_TRAB_H
 
 static const char *htmlHomePage = R"HTMLHOMEPAGE(
+
 <!DOCTYPE html>
 <html>
   <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
     <style>
-      .arrows {
-        font-size:30px;
-        color:red;
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: white;
       }
+
+      /* Botões */
+      .arrows { font-size:30px; color:red; }
       td.button {
         background-color:black;
         border-radius:25%;
@@ -19,8 +27,9 @@ static const char *htmlHomePage = R"HTMLHOMEPAGE(
       }
       td.button:active {
         transform: translate(5px,5px);
-        box-shadow: none; 
+        box-shadow: none;
       }
+
       .noselect {
         -webkit-touch-callout: none;
         -webkit-user-select: none;
@@ -29,9 +38,8 @@ static const char *htmlHomePage = R"HTMLHOMEPAGE(
         -ms-user-select: none;
         user-select: none;
       }
-      .slidecontainer {
-        width: 100%;
-      }
+
+      /* Sliders */
       .slider {
         -webkit-appearance: none;
         width: 100%;
@@ -40,26 +48,17 @@ static const char *htmlHomePage = R"HTMLHOMEPAGE(
         background: #d3d3d3;
         outline: none;
         opacity: 0.7;
-        transition: opacity .2s;
       }
       .slider:hover { opacity: 1; }
       .slider::-webkit-slider-thumb {
         -webkit-appearance: none;
-        width: 25px;
-        height: 25px;
-        border-radius: 50%;
-        background: red;
-        cursor: pointer;
-      }
-      .slider::-moz-range-thumb {
-        width: 25px;
-        height: 25px;
+        width: 20px; height: 20px;
         border-radius: 50%;
         background: red;
         cursor: pointer;
       }
 
-      /* Área de console */
+      /* Console */
       #console {
         width: 400px;
         height: 120px;
@@ -73,26 +72,57 @@ static const char *htmlHomePage = R"HTMLHOMEPAGE(
         overflow-y: auto;
         text-align: left;
       }
+
+      /* ======== RADAR CANVAS ======== */
+      #radarCanvas {
+        width:300px;
+        height:200px;
+        background:#000;
+        border:1px solid #444;
+      }
     </style>
   </head>
+
   <body class="noselect" align="center" style="background-color:white">
-    <table id="mainTable" style="width:400px;margin:auto;table-layout:fixed" CELLSPACING=10>
+    <table id="mainTable"
+           style="width:400px;margin:auto;table-layout:fixed"
+           CELLSPACING=8>
+
+      <tr>
+  <td colspan="3">
+    <div id="distBox"
+         style="width:300px;height:60px;margin:auto;
+                background:#222;color:#00ff00;
+                font-family:monospace;font-size:22px;
+                border:1px solid #444;border-radius:6px;
+                display:flex;align-items:center;justify-content:center;">
+      
+      <div style="display:flex;gap:8px;align-items:center;">
+        <span>Distância:</span>
+        <span id="distValor"
+              style="display:inline-block;width:70px;text-align:center;">
+          --- 
+        </span>
+        <span>cm</span>
+      </div>
+
+    </div>
+  </td>
+</tr>
+
+
+
+      <!-- ===================== RADAR CANVAS ======================= -->
       <tr>
         <td colspan="3">
-          <img id="cameraImage" src="" style="width:400px;height:230px">
+          <canvas id="radarCanvas" width="300" height="200"></canvas>
         </td>
       </tr>
 
-      <tr>
-        <td colspan="3">
-          <div id="newBox" style="width:400px;height:200px;background-color:#e0e0e0;border:1px solid #ccc;"></div>
-        </td>
-      </tr>
-
-      <tr>
-        <td></td>
-        <td class="button" 
-            ontouchstart='sendButtonInput("frente","1")' 
+      <!-- Botões do carro -->
+      <tr><td></td>
+        <td class="button"
+            ontouchstart='sendButtonInput("frente","1")'
             ontouchend='sendButtonInput("frente","-1")'
             onmousedown='sendButtonInput("frente","1")'
             onmouseup='sendButtonInput("frente","-1")'>
@@ -102,21 +132,21 @@ static const char *htmlHomePage = R"HTMLHOMEPAGE(
       </tr>
 
       <tr>
-        <td class="button" 
+        <td class="button"
             ontouchstart='sendButtonInput("esquerda","3")'
             ontouchend='sendButtonInput("esquerda","-3")'
             onmousedown='sendButtonInput("esquerda","3")'
             onmouseup='sendButtonInput("esquerda","-3")'>
           <span class="arrows">&#8678;</span>
         </td>
-        <td class="button" 
+
+        <td class="button"
             ontouchstart='sendButtonInput("parar","0")'
-            ontouchend='sendButtonInput("parar","0")'
-            onmousedown='sendButtonInput("parar","0")'
-            onmouseup='sendButtonInput("parar","0")'>
+            onmousedown='sendButtonInput("parar","0")'>
           <span class="arrows">&#9634;</span>
         </td>
-        <td class="button" 
+
+        <td class="button"
             ontouchstart='sendButtonInput("direita","4")'
             ontouchend='sendButtonInput("direita","-4")'
             onmousedown='sendButtonInput("direita","4")'
@@ -125,9 +155,8 @@ static const char *htmlHomePage = R"HTMLHOMEPAGE(
         </td>
       </tr>
 
-      <tr>
-        <td></td>
-        <td class="button" 
+      <tr><td></td>
+        <td class="button"
             ontouchstart='sendButtonInput("traz","2")'
             ontouchend='sendButtonInput("traz","-2")'
             onmousedown='sendButtonInput("traz","2")'
@@ -137,115 +166,268 @@ static const char *htmlHomePage = R"HTMLHOMEPAGE(
         <td></td>
       </tr>
 
+      <!-- Slider Velocidade -->
       <tr>
-        <td style="text-align:left"><b>Velocidade:</b><span id="VelocidadeValor">0</span></td>
-        <td colspan="2">
-          <div class="slidecontainer">
-            <input type="range" min="-100" max="100" step="20" value="0" class="slider" id="Velocidade"
-                   oninput='sendButtonInput("Velocidade",value); updateSliderValue("Velocidade", value);'>
-          </div>
+        <td style="text-align:left">
+          <b>Velocidade:</b><span id="VelocidadeValor">0</span>
         </td>
-      </tr>        
-
-      <tr>
-        <td style="text-align:left"><b>Direcao:</b><span id="DirecaoValor">0</span></td>
         <td colspan="2">
-          <div class="slidecontainer">
-            <input type="range" min="30" max="140" step="5" value="85" class="slider" id="Direcao"
-                   oninput='sendButtonInput("Direcao",value); updateSliderValue("Direcao", value);'>
-          </div>
-        </td>
-      </tr> 
-
-      <!-- Console -->
-      <tr>
-        <td colspan="3">
-          <div id="console"></div>
+          <input type="range" min="-100" max="100" step="20" value="0"
+                 class="slider" id="Velocidade"
+                 oninput='sendButtonInput("Velocidade",value);
+                          updateSliderValue("Velocidade", value);'>
         </td>
       </tr>
+
+      <!-- Slider Direção -->
+      <tr>
+        <td style="text-align:left">
+          <b>Direção:</b><span id="DirecaoValor">0</span>
+        </td>
+        <td colspan="2">
+          <input type="range" min="30" max="140" step="5" value="85"
+                 class="slider" id="Direcao"
+                 oninput='sendButtonInput("Direcao",value);
+                          updateSliderValue("Direcao", value);'>
+        </td>
+      </tr>
+
+      <!-- Console -->
+      <tr><td colspan="3"><div id="console"></div></td></tr>
+
+      <!-- Comandos -->
+      <tr>
+        <td colspan="3">
+          <input id="comandoTxt" placeholder="Digite um comando..."
+                 style="width:170px;height:20px;font-size:14px;padding:3px;">
+          <button onclick="enviarComando()"
+                  style="width:60px;height:32px;background-color:#4CAF50;
+                         color:white;border:none;border-radius:5px;">
+            Enviar
+          </button>
+
+          <button onclick="toggleMedicao()"
+                  style="width:70px;height:32px;background-color:#f44336;
+                         color:white;border:none;border-radius:5px;">
+            Medição
+          </button>
+
+          <button onclick="toggleDebug()"
+                  style="width:60px;height:32px;background-color:#2196F3;
+                         color:white;border:none;border-radius:5px;">
+            Debug
+          </button>
+        </td>
+      </tr>
+
     </table>
 
+    <!-- ====================== SCRIPT RADAR ====================== -->
+
     <script>
-      var webSocketCameraUrl = "ws://" + window.location.hostname + "/Camera";
-      var webSocketCarInputUrl = "ws://" + window.location.hostname + "/Carro";      
-      var websocketCamera;
-      var websocketCarInput;
 
-      function updateSliderValue(key, value) {
-        var valueSpan = document.getElementById(key + "Valor");
-        if (valueSpan) valueSpan.textContent = value;
-      }
 
-      // --- Função que adiciona texto ao console e mantém apenas 300 linhas ---
-      function appendToConsole(text) {
-        const consoleDiv = document.getElementById("console");
-        const newLine = document.createElement("div");
-        newLine.textContent = text;
-        consoleDiv.appendChild(newLine);
-        while (consoleDiv.children.length > 300) {
-          consoleDiv.removeChild(consoleDiv.firstChild);
+
+
+
+      // ----------------- PARÂMETROS DO RADAR -----------------
+      const RADAR_MAX_CM       = 200;   // mesma config do HC-SR04
+      const MAX_POINTS         = 400;   // mais pontos por causa do passo 2
+      const POINT_LIFETIME_MS  = 2000; // ~tempo de 1 volta completa
+
+      let radarPoints    = [];
+      let radarLastAngle = 0;
+
+function updateDistanciaPainel(dist){
+    const campo = document.getElementById("distValor");
+
+    // Mostra "---" se -1
+    if(dist < 0){
+        campo.textContent = "---";
+    } else {
+        // Formatação fixa com 1 casa dec., largura estável
+        campo.textContent = dist.toFixed(1).padStart(4, ' ');
+    }
+}
+
+
+
+
+
+      function drawRadar(){
+        const canvas = document.getElementById("radarCanvas");
+        const ctx    = canvas.getContext("2d");
+
+        const w  = canvas.width;
+        const h  = canvas.height;
+        const cx = w / 2;
+        const cy = h;
+        const R  = h - 10;
+
+        // Fundo
+        ctx.fillStyle = "#000000";
+        ctx.fillRect(0,0,w,h);
+
+        // Arcos (grades)
+        ctx.strokeStyle = "#002200";
+        ctx.lineWidth = 1;
+        for(let i = 1; i <= 4; i++){
+          let r = R * (i/4);
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, Math.PI, 2*Math.PI);
+          ctx.stroke();
         }
-        consoleDiv.scrollTop = consoleDiv.scrollHeight;
+
+        // Base
+        ctx.beginPath();
+        ctx.moveTo(cx - R, cy);
+        ctx.lineTo(cx + R, cy);
+        ctx.stroke();
+
+        const now = Date.now();
+
+        // Pontos (eco) com fade
+        for(let i = 0; i < radarPoints.length; i++){
+          const p = radarPoints[i];
+          const age = now - p.t;
+          if(age > POINT_LIFETIME_MS) continue;
+
+          const life = 1.0 - (age / POINT_LIFETIME_MS);
+          if(life <= 0) continue;
+
+          const frac = p.dist / RADAR_MAX_CM;
+          const r    = frac * R;
+          const rad  = (p.ang) * Math.PI/180.0; // 0° direita, 180° esquerda
+
+          const x = cx + r * Math.cos(rad);
+          const y = cy - r * Math.sin(rad);
+
+          ctx.beginPath();
+          ctx.fillStyle = "rgba(0,255,0," + life.toFixed(3) + ")";
+          ctx.arc(x, y, 2, 0, 2*Math.PI); // ponto menor (raio 2)
+          ctx.fill();
+        }
+
+        // Linha do feixe
+        ctx.strokeStyle = "#FF0000";
+        ctx.lineWidth   = 2;
+        const ang = (radarLastAngle) * Math.PI/180.0;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(cx + R * Math.cos(ang), cy - R * Math.sin(ang));
+        ctx.stroke();
       }
 
-      function initCameraWebSocket() {
-        websocketCamera = new WebSocket(webSocketCameraUrl);
-        websocketCamera.binaryType = 'blob';
-        websocketCamera.onclose = function() { setTimeout(initCameraWebSocket, 2000); };
-        websocketCamera.onmessage = function(event) {
-          const imageId = document.getElementById("cameraImage");
-          imageId.src = URL.createObjectURL(event.data);
-        };
+      function updateRadar(ang, dist){
+        radarLastAngle = ang;
+
+        if(!isNaN(dist) && dist >= 0){
+          radarPoints.push({ ang: ang, dist: dist, t: Date.now() });
+          if(radarPoints.length > MAX_POINTS)
+            radarPoints.shift();
+        }
+
+        drawRadar();
       }
 
-      function initCarInputWebSocket() {
-        websocketCarInput = new WebSocket(webSocketCarInputUrl);
-        websocketCarInput.onopen = function() {
-          sendButtonInput("Velocidade", document.getElementById("Velocidade").value);
-          sendButtonInput("Direcao", document.getElementById("Direcao").value);
+      // ================== WEBSOCKET ==================
+
+      var wsCarro;
+      var wsURL = "ws://" + window.location.hostname + "/Carro";
+
+      function initWS(){
+        wsCarro = new WebSocket(wsURL);
+
+        wsCarro.onopen = () => {
+          sendButtonInput("Velocidade",
+                          document.getElementById("Velocidade").value);
+          sendButtonInput("Direcao",
+                          document.getElementById("Direcao").value);
         };
-        websocketCarInput.onclose = function() { setTimeout(initCarInputWebSocket, 2000); };
 
-        websocketCarInput.onmessage = function(event) {
-          var msg = event.data;
-          var parts = msg.split(',');
-          if (parts.length === 2) {
-            var key = parts[0].trim();   
-            var value = parts[1].trim();
-            
-            // Se for mensagem de console -> imprime no painel
-            if (key === "console") {
-              appendToConsole(msg);
-              return;
-            }
+        wsCarro.onclose = () => setTimeout(initWS, 2000);
 
-            // Atualiza sliders se aplicável
-            var slider = document.getElementById(key);
-            if (slider) {
-              slider.value = value;
-              updateSliderValue(key, value);
+        wsCarro.onmessage = (event)=>{
+          let msg = event.data.trim();
+          let p   = msg.split(",");
+
+          if(p.length < 2) return;
+
+          let key = p[0];
+
+          // radar,angulo,distancia
+          if(key === "radar"){
+            if(p.length >= 3){
+              let ang  = parseFloat(p[1]);
+              let dist = parseFloat(p[2]);
+              updateRadar(ang, dist);
+              updateDistanciaPainel(dist);
             }
+            return;
+          }
+
+          if(key === "console"){
+            appendToConsole(p.slice(1).join(","));
+            return;
+          }
+
+          let s = document.getElementById(key);
+          if(s){
+            s.value = p[1];
+            updateSliderValue(key, p[1]);
           }
         };
       }
 
-      function initWebSocket() {
-        initCameraWebSocket();
-        initCarInputWebSocket();
+      function appendToConsole(txt){
+        const div  = document.getElementById("console");
+        const line = document.createElement("div");
+        line.textContent = txt;
+        div.appendChild(line);
+        div.scrollTop = div.scrollHeight;
       }
 
-      function sendButtonInput(key, value) {
-        var data = key + "," + value;
-        websocketCarInput.send(data);
+      function updateSliderValue(key, val){
+        const span = document.getElementById(key + "Valor");
+        if(span) span.textContent = val;
       }
 
-      window.onload = initWebSocket;
-      document.getElementById("mainTable").addEventListener("touchend", function(event) {
-        event.preventDefault();
-      });
+      function sendButtonInput(key,value){
+        if(wsCarro && wsCarro.readyState === WebSocket.OPEN)
+          wsCarro.send(key + "," + value);
+      }
+
+      function enviarComando(){
+        let t = comandoTxt.value.trim();
+        if(t.length > 0){
+          wsCarro.send(t);
+          appendToConsole("cmd> " + t);
+        }
+        comandoTxt.value = "";
+      }
+
+      let medicaoLigada = true;
+      function toggleMedicao(){
+        medicaoLigada = !medicaoLigada;
+        sendButtonInput("medicao", (medicaoLigada ? 1 : 0));
+        appendToConsole("Medição: " +
+                        (medicaoLigada ? "ligada" : "desligada"));
+      }
+
+      let debugLigado = true;
+      function toggleDebug(){
+        debugLigado = !debugLigado;
+        sendButtonInput("debug", (debugLigado ? 1 : 0));
+        appendToConsole("Debug: " +
+                        (debugLigado ? "ligado" : "desligado"));
+      }
+
+      window.onload = initWS;
     </script>
-  </body>    
+
+  </body>
 </html>
+
 )HTMLHOMEPAGE";
 
 #endif

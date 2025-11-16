@@ -1,4 +1,5 @@
-// main.cpp
+// main.cpp — VERSÃO FINAL DO PROJETO (RADAR + HCSR04 + WS)
+
 #include <Arduino.h>
 
 #include "config.h"
@@ -8,72 +9,63 @@
 #include "motorDc.h"
 #include "serial_trab.h"
 #include "andarSozinho.h"
+#include "log_trab.h"
+#include "ultrassom_trab.h"
 
-unsigned long tempoAgora = millis();
+// ======= Timers =======
+unsigned long agora = 0;
+unsigned long ultimoHouse = 0;
+unsigned long ultimoRadar = 0;
 
-unsigned long tempoAntes = 0;
-
-const long timerOut = TIMEOUT_NILLIS;
+const unsigned long INTERVALO_HOUSE_MS = 100;
+const unsigned long INTERVALO_RADAR_MS = TIMEOUT_NILLIS;
 
 void setup()
 {
   Serial.begin(SERIAL_VELOCIDADE);
+  delay(300);
 
+  initLog();
   initServo();
-
   initWifi();
-
   initWebServer();
-
   initMotoDc();
+  initUltrassom();
+
+  logTrab("Setup completo");
 }
 
 void loop()
 {
-  tempoAgora = millis();
+  agora = millis();
 
-  if (tempoAgora - tempoAntes >= timerOut)
+  // =================== HOUSEKEEPING ===================
+  if (agora - ultimoHouse >= INTERVALO_HOUSE_MS)
   {
+    ultimoHouse = agora;
     cleanupWebClients();
     lerComando();
-    moveMedicao();
-    tempoAntes = tempoAgora;
-
-    /*
-    Insirir aqui para o carro andar sozinho
-    ex:
-    Move a direção em graus (SERVO_DIRECAO_MIN 35)->direita  (SERVO_DIRECAO_MAX 130)-> esquerda
-
-    Exemplo toda a direção para a direita
-    setServoDirecao(35);
-
-
-    Mover para frente e para traz
-    Valores -100 a 100
-    motor desligado 0
-
-    Exemplo 100% da velocidade para a frente
-    moverMotor(100);
-
-    Exemplo 100% da velocidade para a traz
-    moverMotor(-100);
-
-    Exemplo motor parado
-    moverMotor(0);
-    ou
-    deslMotor();
-
-
-    exemplo onde deve ser adcionada a logica para o carro andar sozinho
-    OLHE OS ARQUIVOS andarSozinho.h andarSozinho.c
-
-    desviarObstaculo();
-
-    */
-
-
-    desviarObstaculo();
-    
   }
 
+  // =================== RADAR (servo + ultrassom) ===================
+  if (agora - ultimoRadar >= INTERVALO_RADAR_MS)
+  {
+    ultimoRadar = agora;
+
+    // 1) mover servo horizontal
+    moveMedicao();
+
+    // 2) obter distância
+    float dist = lerDistanciaCm(); // já filtrada
+    int ang = getPosicaoMedicao(); // ângulo atual do servo
+
+    // 3) pacote WS
+    String payload = String(ang) + "," + String(dist, 1);
+
+    Serial.println(payload);
+    enviaDadosClientes("radar", payload);
+  }
+
+  // =================== AUTÔNOMO (opcional) ===================
+  // desviarObstaculo();
 }

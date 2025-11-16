@@ -1,78 +1,77 @@
-// motorDc.cpp
+// motorDc.cpp — VERSÃO FINAL OTIMIZADA
 
 #include "motorDc.h"
 
-L293D motor1(MOTOR_IN1_A, MOTOR_IN1_B, MOTOR_1_PWM);
+int ultimaVelocidade = 0; // -100 a 100
 
-volatile int velocidadeAtual;
+// ============ Inicialização do motor ==============
+void initMotoDc()
+{
+    pinMode(MOTOR_IN1_PIN, OUTPUT);
+    pinMode(MOTOR_IN2_PIN, OUTPUT);
+    pinMode(MOTOR_ENA_PIN, OUTPUT);
 
-int initMotoDc()
-{
-    motor1.begin(true, PWM_MOTOR_FREQUENCY, PWM_MOTOR_RESOLUTION);
-    motor1.SetMotorSpeed(0);
-    velocidadeAtual = 0;
-    return 0;
-}
-void moverFrente(int valor)
-{
-    if (velocidadeAtual == valor)
-    {
-        return;
-    }
-    if (valor >= 0 && valor <= 100)
-    {
-        motor1.SetMotorSpeed(valor);
-        velocidadeAtual = valor;
-    }
+    ledcSetup(MOTOR_PWM_CHANNEL, MOTOR_PWM_FREQ, MOTOR_PWM_RESOLUTION);
+    ledcAttachPin(MOTOR_ENA_PIN, MOTOR_PWM_CHANNEL);
+
+    moverMotor(0); // para tudo no início
+    logTrab("Motor L293D inicializado");
 }
 
-void moverTraz(int valor)
+// ============ Aplica velocidade no motor ===========
+void moverMotor(int velocidade)
 {
-    if (velocidadeAtual == valor)
-    {
+    // Clamping absoluto
+    if (velocidade > 100)
+        velocidade = 100;
+    if (velocidade < -100)
+        velocidade = -100;
+
+    // Sem mudança → não loga
+    if (velocidade == ultimaVelocidade)
         return;
-    }
-    if (valor <= 0 && valor >= -100)
+
+    int pwm = abs(velocidade) * 2.55; // converte -100..100 → PWM 0..255
+
+    if (velocidade > 0)
     {
-        motor1.SetMotorSpeed(valor);
-        velocidadeAtual = valor;
+        digitalWrite(MOTOR_IN1_PIN, HIGH);
+        digitalWrite(MOTOR_IN2_PIN, LOW);
     }
+    else if (velocidade < 0)
+    {
+        digitalWrite(MOTOR_IN1_PIN, LOW);
+        digitalWrite(MOTOR_IN2_PIN, HIGH);
+    }
+    else
+    {
+        digitalWrite(MOTOR_IN1_PIN, LOW);
+        digitalWrite(MOTOR_IN2_PIN, LOW);
+    }
+
+    ledcWrite(MOTOR_PWM_CHANNEL, pwm);
+
+    // Atualiza slider na homepage
+    enviaDadosClientes("Velocidade", velocidade);
+
+    logTrab("Velocidade antes " + String(ultimaVelocidade) + " agora " + String(velocidade));
+
+    ultimaVelocidade = velocidade;
 }
 
-void moverMotor(int valor)
+// ============ Controles incrementais ==================
+void addVelocidade()
 {
-
-    if (velocidadeAtual == valor)
-    {
-        return;
-    }
-
-    if (valor >= -100 && valor <= 100)
-    {
-        motor1.SetMotorSpeed(valor);
-        velocidadeAtual = valor;
-        enviaDadosClientes("Velocidade", valor);
-        logTrab("Velocidade -> ", velocidadeAtual);
-    }
-
-    return;
+    moverMotor(ultimaVelocidade + 20);
 }
 
 void subVelocidade()
 {
-
-    moverMotor(velocidadeAtual - MOTOR_ADICAO_SUBTRACAO);
-    logTrab("subVelocidade -> ", velocidadeAtual);
-}
-
-void addVelocidade()
-{
-
-    moverMotor(velocidadeAtual + MOTOR_ADICAO_SUBTRACAO);
-    logTrab("subVelocidade -> ", velocidadeAtual);
+    moverMotor(ultimaVelocidade - 20);
 }
 
 void deslMotor()
 {
     moverMotor(0);
+    logTrab("Motor parado");
 }

@@ -37,4 +37,6 @@ void moveMedicao();
 
 void ligaDesligaMedicao(int valor);
 
+int getPosicaoMedicao();
+
 #endif

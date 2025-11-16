@@ -23,18 +23,14 @@
 #include "motorDc.h"
 #include "log_trab.h"
 
-// Declaracões externas para as variáveis de estado do carro
-extern volatile int DirecaoLida;
-extern volatile int velocidadeLida;
-
-// Função para configurar o servidor web e WebSockets
+// Inicializa o servidor HTTP + WebSocket
 void initWebServer();
 
-// Função para limpar clientes inativos (chamar no loop())
+// Limpa clientes WebSocket desconectados
 void cleanupWebClients();
 
-void enviaDadosClientes(String str, int valor);
-
-void enviaDadosClientes(String str, String dado);
+// Envia dados para todos os clientes WebSocket
+void enviaDadosClientes(String chave, int valor);
+void enviaDadosClientes(String chave, String dado);
 
 #endif

@@ -16,5 +16,5 @@ void desviarObstaculo(){
 void desviarObstaculo()
 {
 
-    printf("andar sozinho");
+    Serial.println("andar sozinho");
 }

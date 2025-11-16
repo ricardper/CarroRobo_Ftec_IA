@@ -1,3 +1,4 @@
+// log_trab.cpp
 #include "log_trab.h"
 
 bool DEBUG = true;
@@ -25,8 +26,10 @@ void logTrab(String str, int valor)
 {
     if (DEBUG)
     {
-        Serial.println(str + " " + valor);
+        String str2 = str + " " + valor + "\n";
+
         enviaDadosClientes("console", "->" + str + "_" + valor);
+        Serial.println(str2);
     }
 }
 
@@ -34,7 +37,8 @@ void logTrab(String str)
 {
     if (DEBUG)
     {
-        Serial.println(str);
+
         enviaDadosClientes("console", "->" + str);
+        Serial.println(str);
     }
 }

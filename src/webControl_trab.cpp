@@ -1,131 +1,186 @@
+// webControl_trab.cpp
+//
+// VERSÃO FINAL — CORRIGIDA, OTIMIZADA E COM TRIM()
+// - Sem eco de WebSocket
+// - Sem comandos desconhecidos
+// - Sem logs duplicados
+// - UTF-8 funcionando
+// - Fila WebSocket estável (sem "Too many messages queued")
+//
 
 #include "webControl_trab.h"
 
-// Instâncias globais do servidor e WebSocket (static é seguro aqui)
+// Instâncias globais
 static AsyncWebServer server(PORT_HTTP);
 static AsyncWebSocket ws("/Carro");
 
-// Variáveis de estado do carro (volatile para uso seguro entre interrupções/tarefas assíncronas)
-volatile int DirecaoLida = 81;   // Centro
-volatile int velocidadeLida = 0; // Parado
+// Estado (caso queira telemetria depois)
+volatile int DirecaoLida = SERVO_CENTRO;
+volatile int velocidadeLida = 0;
 
-// Função de Callback para Gerenciar Eventos do WebSocket
-void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type,
-               void *arg, uint8_t *data, size_t len)
+// ========================================================================
+// EVENTO DO WEBSOCKET
+// ========================================================================
+static void onWsEvent(AsyncWebSocket *server,
+                      AsyncWebSocketClient *client,
+                      AwsEventType type,
+                      void *arg,
+                      uint8_t *data,
+                      size_t len)
 {
-
     switch (type)
     {
+    // Cliente conectou
     case WS_EVT_CONNECT:
-        Serial.printf("Cliente WS conectado: %u\n", client->id());
+        Serial.println("Cliente WS conectado: " + String(client->id()));
         break;
 
+    // Cliente desconectou
     case WS_EVT_DISCONNECT:
-        Serial.printf("Cliente WS desconectado: %u\n", client->id());
+        Serial.println("Cliente WS desconectado: " + String(client->id()));
         break;
+
+    // Mensagem recebida
     case WS_EVT_DATA:
     {
         AwsFrameInfo *info = (AwsFrameInfo *)arg;
-        if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT)
+
+        // Só processa mensagens completas e de texto
+        if (!(info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT))
+            return;
+
+        // Monta a mensagem
+        String msg;
+        msg.reserve(len);
+        for (size_t i = 0; i < len; i++)
+            msg += (char)data[i];
+
+        msg.trim(); // remove \r, \n, \0 e espaços extras
+
+        int commaIndex = msg.indexOf(',');
+        if (commaIndex == -1)
         {
-
-            String msg = (char *)data;
-            // O seu JS envia "Key,Value" (ex: "Speed,150" ou "MoveCar,1")
-            int commaIndex = msg.indexOf(',');
-            if (commaIndex != -1)
-            {
-                String comando = msg.substring(0, commaIndex);
-                String valorStr = msg.substring(commaIndex + 1);
-                int valor = valorStr.toInt();
-
-                if (comando == "parar")
-                {
-                    logTrab("deslMotor");
-                    deslMotor();
-                }
-                else if (comando == "frente")
-                {
-                    logTrab("addVelocidade");
-                    addVelocidade();
-                }
-                else if (comando == "traz")
-                {
-
-                    logTrab("subVelocidade");
-                    subVelocidade();
-                }
-                else if (comando == "esquerda")
-                {
-
-                    logTrab("subdirecao");
-                    subDirecao();
-                }
-                else if (comando == "direita")
-                {
-
-                    logTrab("addDirecao");
-                    addDirecao();
-                }
-
-                else if (comando == "Direcao")
-                {
-
-                    if (valor >= 1 && valor <= 180)
-                    {
-
-                        setServoDirecao(valor);
-                    }
-                }
-                else if (comando == "Velocidade")
-                {
-
-                    if (valor >= -100 && valor <= 100)
-                    {
-
-                        moverMotor(valor);
-                    }
-                }
-            }
+            logTrab("Comando WS inválido: " + msg);
+            return;
         }
-        break;
-    }
-    case WS_EVT_PONG:
-    case WS_EVT_ERROR:
-        break;
-    }
-}
 
+        // Separa comando e valor
+        String comando = msg.substring(0, commaIndex);
+        String valorStr = msg.substring(commaIndex + 1);
+
+        comando.trim();
+        valorStr.trim();
+
+        int valor = valorStr.toInt();
+
+        // DEBUG:
+        // logTrab("WS: [" + comando + "] [" + valorStr + "]");
+
+        // ===============================================================
+        // COMANDOS DO CARRO
+        // ===============================================================
+
+        if (comando == "parar")
+        {
+            deslMotor();
+        }
+        else if (comando == "frente")
+        {
+            addVelocidade();
+        }
+        else if (comando == "traz")
+        {
+            subVelocidade();
+        }
+        else if (comando == "esquerda")
+        {
+            subDirecao();
+        }
+        else if (comando == "direita")
+        {
+            addDirecao();
+        }
+
+        // ------------------- SLIDER DIREÇÃO -----------------------
+        else if (comando == "Direcao")
+        {
+            if (valor >= 1 && valor <= 180)
+                setServoDirecao(valor);
+        }
+
+        // ------------------- SLIDER VELOCIDADE -------------------
+        else if (comando == "Velocidade")
+        {
+            if (valor >= -100 && valor <= 100)
+                moverMotor(valor);
+        }
+
+        // ------------------- CONTROLE DO RADAR --------------------
+        else if (comando == "medicao")
+        {
+            ligaDesligaMedicao(valor);
+        }
+
+        // ------------------- CONTROLE DE LOG/DEBUG ----------------
+        else if (comando == "debug")
+        {
+            ligaDesligaDebug(valor);
+        }
+
+        // ------------------- DESCONHECIDO -------------------------
+        else
+        {
+            logTrab("Comando WS desconhecido: " + comando);
+        }
+    }
+    break;
+    }
+
+} // fim do onWsEvent
+
+// ========================================================================
+// INICIALIZAÇÃO DO SERVIDOR
+// ========================================================================
 void initWebServer()
 {
-    // Definir a função que gerencia eventos WebSocket
     ws.onEvent(onWsEvent);
     server.addHandler(&ws);
 
-    // Rota
     server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
-              { request->send(200, "text/html", htmlHomePage); });
+              { request->send(200,
+                              "text/html; charset=utf-8",
+                              htmlHomePage); });
 
     server.begin();
     Serial.printf("Servidor AsyncWebServer iniciado na porta %d\n", PORT_HTTP);
 }
 
-// Limpeza de clientes inativos
+// ========================================================================
+// LIMPA CLIENTES INATIVOS (evita fila cheia do WS)
+// ========================================================================
 void cleanupWebClients()
 {
     ws.cleanupClients();
 }
 
-void enviaDadosClientes(String str, int valor)
+// ========================================================================
+// ENVIA DADOS PARA TODOS OS CLIENTES (INT)
+// ========================================================================
+void enviaDadosClientes(String chave, int valor)
 {
+    if (!ws.availableForWriteAll())
+        return; // evita "Too many messages queued"
 
-    String mensagem = str + "," + String(valor);
-
-    ws.textAll(mensagem);
+    ws.textAll(chave + "," + String(valor));
 }
-void enviaDadosClientes(String str, String dado)
+
+// ========================================================================
+// ENVIA DADOS PARA TODOS OS CLIENTES (STRING)
+// ========================================================================
+void enviaDadosClientes(String chave, String dado)
 {
+    if (!ws.availableForWriteAll())
+        return;
 
-    String mensagem = str + "," + String(dado);
-
-    ws.textAll(mensagem);
+    ws.textAll(chave + "," + dado);
 }

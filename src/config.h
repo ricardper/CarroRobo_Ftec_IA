@@ -1,30 +1,47 @@
+#ifndef _CONFIG_TRAB_H
+#define _CONFIG_TRAB_H
 
+// ======================= PINOS ===================================
+#define SERVO_DIRECAO_PIN 14
+#define SERVO_MEDICAO_PIN 27
 
-#ifndef _CAR_CONFIG_H
-#define _CAR_CONFIG_H
+// Motor L293D
+#define MOTOR_ENA_PIN 25
+#define MOTOR_IN1_PIN 33
+#define MOTOR_IN2_PIN 32
 
-#define DELIMITADOR ","
+// Velocidade do PWM do motor
+#define MOTOR_PWM_CHANNEL 0
+#define MOTOR_PWM_FREQ 1000
+#define MOTOR_PWM_RESOLUTION 8 // 0–255
 
-#define SERIAL_VELOCIDADE 115200
+// ======================= SERVO DIREÇÃO ============================
+// Limites ABSOLUTOS – garantidos por clamp no servo_trab.cpp
+#define SERVO_DIRECAO_MIN 35
+#define SERVO_DIRECAO_MAX 130
+#define SERVO_CENTRO 85
+
+#define SERVO_ADICAO_SUBTRACAO 5 // incremento dos botões
+
+// ======================= SERVO MEDIÇÃO ============================
+#define SERVO_MEDICAO_PASSO 2 // suavidade do radar
+
+// ======================= WEBSERVER ================================
 #define PORT_HTTP 80
+
+// ======================= SERIAL ==================================
+#define SERIAL_VELOCIDADE 115200
+
+// ======================= LOOP / TEMPOS ============================
+// Intervalo do radar → moveMedicao()
+#define TIMEOUT_NILLIS 30 // ms
+
+#define HCSR04_TRIG_PIN 26
+#define HCSR04_ECHO_PIN 4
+#define HCSR04_DIST_MAX_CM 200
+#define HCSR04_DIST_MIN_CM 10
+
 #define SSID_WIFI "CONTAB_ 2.4"
 #define PASSWORD_WIFI "11851404"
-
-#define SERVO_DIRECAO_PIN 12
-#define SERVO_CENTRO 80
-#define SERVO_DIRECAO_MAX 130
-#define SERVO_DIRECAO_MIN 35
-#define SERVO_ADICAO_SUBTRACAO 5
-
-#define SERVO_MEDICAO_PIN 23
-#define SERVO_MEDICAO_PASSO 5
-#define TIMEOUT_NILLIS 50
-
-#define MOTOR_IN1_A 33
-#define MOTOR_IN1_B 32
-#define MOTOR_1_PWM 25
-#define PWM_MOTOR_FREQUENCY 200
-#define PWM_MOTOR_RESOLUTION 8
-#define MOTOR_ADICAO_SUBTRACAO 20
 
 #endif

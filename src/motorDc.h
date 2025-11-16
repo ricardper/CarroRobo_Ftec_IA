@@ -19,7 +19,7 @@ extern L293D motor1;
 
 extern volatile int velocidadeAtual;
 
-int initMotoDc();
+void initMotoDc();
 
 void moverFrente(int valor);
 
