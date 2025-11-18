@@ -1,4 +1,3 @@
-
 // webControl_trab.cpp
 //
 // VERSÃO FINAL — CORRIGIDA, OTIMIZADA E COM TRIM()
@@ -74,6 +73,9 @@ static void onWsEvent(AsyncWebSocket *server,
 
         int valor = valorStr.toInt();
 
+        // DEBUG:
+        // logTrab("WS: [" + comando + "] [" + valorStr + "]");
+
         // ===============================================================
         // COMANDOS DO CARRO
         // ===============================================================
@@ -123,14 +125,6 @@ static void onWsEvent(AsyncWebSocket *server,
         else if (comando == "debug")
         {
             ligaDesligaDebug(valor);
-        }
-
-        // ------------------- NOVO: MODO ANDAR SOZINHO -------------
-        else if (comando == "auto")
-        {
-            // Aqui você integra com sua biblioteca de "andar sozinho"
-            // por exemplo: ligaDesligaAuto(valor);
-            logTrab(String("andar sozinho: ") + (valor == 1 ? "LIGADO" : "DESLIGADO"));
         }
 
         // ------------------- DESCONHECIDO -------------------------

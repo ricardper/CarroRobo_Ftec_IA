@@ -11,6 +11,7 @@
 #include "andarSozinho.h"
 #include "log_trab.h"
 #include "ultrassom_trab.h"
+#include "andarSozinho.h"
 
 // ======= Timers =======
 unsigned long agora = 0;
@@ -31,6 +32,7 @@ void setup()
   initWebServer();
   initMotoDc();
   initUltrassom();
+  initAndarSozinho();
 
   logTrab("Setup completo");
 }
@@ -68,4 +70,9 @@ void loop()
 
   // =================== AUTÔNOMO (opcional) ===================
   // desviarObstaculo();
+
+  if (modoAutonomoAtivo)
+  {
+    andarSozinhoLoop();
+  }
 }

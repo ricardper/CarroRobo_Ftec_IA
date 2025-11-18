@@ -1,4 +1,4 @@
-// webControl_trab.h
+// web_control.h
 #ifndef _WEB_CONTROL_TRAB_H
 #define _WEB_CONTROL_TRAB_H
 
@@ -16,6 +16,7 @@
 
 #include <ESPAsyncWebServer.h>
 
+// Inclua seus outros headers se necessário (servo_trab.h, config.h)
 #include "config.h"
 #include "servo_trab.h"
 #include "web.h"

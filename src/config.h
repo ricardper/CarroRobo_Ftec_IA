@@ -24,7 +24,7 @@
 #define SERVO_ADICAO_SUBTRACAO 5 // incremento dos botões
 
 // ======================= SERVO MEDIÇÃO ============================
-#define SERVO_MEDICAO_PASSO 2 // suavidade do radar
+#define SERVO_MEDICAO_PASSO 2
 
 // ======================= WEBSERVER ================================
 #define PORT_HTTP 80
