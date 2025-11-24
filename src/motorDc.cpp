@@ -62,12 +62,12 @@ void moverMotor(int velocidade)
 // ============ Controles incrementais ==================
 void addVelocidade()
 {
-    moverMotor(ultimaVelocidade + 20);
+    moverMotor(ultimaVelocidade + INCREMENTO_MOTOR_DC);
 }
 
 void subVelocidade()
 {
-    moverMotor(ultimaVelocidade - 20);
+    moverMotor(ultimaVelocidade - INCREMENTO_MOTOR_DC);
 }
 
 void deslMotor()

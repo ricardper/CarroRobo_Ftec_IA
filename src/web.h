@@ -1,4 +1,3 @@
-
 // web.h
 #ifndef _WEB_TRAB_H
 #define _WEB_TRAB_H
@@ -89,21 +88,33 @@ static const char *htmlHomePage = R"HTMLHOMEPAGE(
            style="width:400px;margin:auto;table-layout:fixed"
            CELLSPACING=8>
 
-      <!-- Caixa de distância numérica -->
+      <!-- Caixa empilhada: Radar / Ultra -->
       <tr>
         <td colspan="3">
           <div id="distBox"
-               style="width:300px;height:60px;margin:auto;
+               style="width:300px;margin:auto;
                       background:#222;color:#00ff00;
-                      font-family:monospace;font-size:22px;
+                      font-family:monospace;font-size:14px;
                       border:1px solid #444;border-radius:6px;
-                      display:flex;align-items:center;justify-content:center;">
+                      display:flex;flex-direction:column;
+                      padding:6px;gap:6px;">
 
-            <div style="display:flex;gap:8px;align-items:center;">
-              <span>Distância:</span>
+            <!-- Linha Radar -->
+            <div style="display:flex;gap:8px;justify-content:center;align-items:center;">
+              <span>Radar:</span>
               <span id="distValor"
-                    style="display:inline-block;width:70px;text-align:center;">
-                --- 
+                    style="display:inline-block;width:60px;text-align:center;">
+                ---
+              </span>
+              <span>cm</span>
+            </div>
+
+            <!-- Linha Ultra -->
+            <div style="display:flex;gap:8px;justify-content:center;align-items:center;">
+              <span>Ultra:</span>
+              <span id="distUltra"
+                    style="display:inline-block;width:60px;text-align:center;">
+                ---
               </span>
               <span>cm</span>
             </div>
@@ -366,6 +377,14 @@ static const char *htmlHomePage = R"HTMLHOMEPAGE(
               updateRadar(ang, dist);
               updateDistanciaPainel(dist);
             }
+            return;
+          }
+
+          // mensagem do ultrassônico: "ultra,NN"
+          if(key === "ultra"){
+            let u = parseFloat(p[1]);
+            document.getElementById("distUltra").textContent =
+                (u < 0 ? "---" : u.toFixed(0));
             return;
           }
 

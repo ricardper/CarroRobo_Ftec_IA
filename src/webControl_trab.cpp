@@ -129,7 +129,7 @@ static void onWsEvent(AsyncWebSocket *server,
         else if (comando == "auto")
         {
             // Aqui você integra com sua biblioteca de "andar sozinho"
-            // por exemplo: ligaDesligaAuto(valor);
+            ligaDesligaAutonomo(valor);
             logTrab(String("andar sozinho: ") + (valor == 1 ? "LIGADO" : "DESLIGADO"));
         }
 

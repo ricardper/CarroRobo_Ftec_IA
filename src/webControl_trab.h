@@ -21,6 +21,7 @@
 #include "web.h"
 #include "motorDc.h"
 #include "log_trab.h"
+#include "andarSozinho.h"
 
 // Inicializa o servidor HTTP + WebSocket
 void initWebServer();

@@ -21,16 +21,14 @@ volatile int servoUltimoValor = SERVO_CENTRO;
 // Servo de radar (HC-SR04)
 Servo servoMedicao;
 bool medicaoLigado = true;
-int posicaoMedicao = 20; // inicia no ângulo mínimo útil
-int direcaoMedicao = 1;  // +1 sobe, -1 desce
+int posicaoMedicao = RADAR_MIN_ANGULO; // inicia no ângulo mínimo útil
+int direcaoMedicao = 1;                // +1 sobe, -1 desce
 
 // Controle de taxa de envio
 static unsigned long ultimoEnvioRadar = 0;
-const unsigned long INTERVALO_ENVIO_RADAR_MS = 60; // ~16 FPS máx.
+const unsigned long INTERVALO_ENVIO_RADAR_MS = 70; // ~16 FPS máx.
 
 // Limites reais do HC-SR04 para montagem horizontal
-#define RADAR_MIN_ANGULO 10
-#define RADAR_MAX_ANGULO 170
 
 // ======================================================================
 // Inicialização dos servos

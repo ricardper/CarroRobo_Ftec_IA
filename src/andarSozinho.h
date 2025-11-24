@@ -3,10 +3,13 @@
 #define ANDAR_SOZINHO_H
 
 #include <Arduino.h>
+#include "config.h"
 #include "servo_trab.h"
 #include "motorDc.h"
+
+#include "sensorDistanciaLaser.h"
+
 #include "ultrassom_trab.h"
-#include "config.h"
 
 extern bool modoAutonomoAtivo;
 // Inicializa buffers, índices e estado
