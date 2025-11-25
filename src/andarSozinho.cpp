@@ -1,22 +1,24 @@
+// src/andarSozinho.cpp
 #include "andarSozinho.h"
 
+// ===================== CONFIGURAÇÕES ==========================
 bool modoAutonomoAtivo = false;
 
-// ===================== CONFIGURAÇÕES ==========================
-
-const int DISTANCIA_MINIMA = 50;
+// thresholds / tempos (ajuste se quiser)
+const int DISTANCIA_MINIMA = 50; // cm (ultrassom) -> detectar obstáculo
 const int VELOCIDADE_PADRAO = 40;
-const int TEMPO_CURVA_SUAVE = 250;
-const int TEMPO_RECUO = 250;
-const int TEMPO_CURVA_ESCAPE = 450;
+const int TEMPO_CURVA_SUAVE = 250; // curva curta (ms)
+const int TEMPO_CURVA_LONGA = 800; // curva longa "C" (ms) -- executa a manobra de desvio
+const int TEMPO_RECUO = 300;       // ré curto (ms)
+const int TEMPO_REAVALIACAO = 200; // espera antes de ler ultrassom após ação
 
 const int ANGULO_ESQUERDA = 50;
 const int ANGULO_DIREITA = 105;
 const int ANGULO_CENTRO = SERVO_CENTRO;
 
-const int NUM_MEDIDAS = 3;
+const int NUM_MEDIDAS = 3; // mesmo do resto do projeto
 
-// Setores ajustados ao radar 10° → 170°
+// Setores (usados para análise de melhor lado)
 const int ANG_ESQ_MIN = 10;
 const int ANG_ESQ_MAX = 70;
 const int ANG_FRT_MIN = 70;
@@ -24,7 +26,7 @@ const int ANG_FRT_MAX = 110;
 const int ANG_DIR_MIN = 110;
 const int ANG_DIR_MAX = 170;
 
-const unsigned long COOLDOWN_ESCAPE = 1200;
+const unsigned long COOLDOWN_ESCAPE = 1200; // evita executar escape várias vezes rápido
 
 // ===================== BUFFERS ================================
 float setorEsquerdo[NUM_MEDIDAS];
@@ -34,29 +36,32 @@ float setorDireito[NUM_MEDIDAS];
 int indiceEsq = 0, indiceFrente = 0, indiceDir = 0;
 
 // ===================== ESTADO ==================================
-
 enum Lado
 {
     LADO_ESQ,
-    LADO_DIR
+    LADO_DIR,
+    LADO_INDEFINIDO
 };
 Lado ultimoLadoCurva = LADO_ESQ;
 
 unsigned long tempoUltimoEscape = 0;
 int contadorTravado = 0;
 
-// Estados não bloqueantes
+// Máquina de estados não-bloqueante
 enum EstadoAuto
 {
-    AUTO_AVANCAR,
-    AUTO_CURVA_ESQ,
-    AUTO_CURVA_DIR,
-    AUTO_RECUO,
-    AUTO_ESCAPE
+    AUTO_DRIVE,       // andar reto
+    AUTO_ANALISA,     // parou, analisa melhores lados
+    AUTO_CURVA_LONGA, // executa curva longa ("C")
+    AUTO_VERIFICA,    // reavalia com ultrassom
+    AUTO_RECUA,       // dá ré (se necessário)
+    AUTO_FALLBACK     // fallback: tenta o outro lado / ré maior
 };
 
-EstadoAuto estadoAtual = AUTO_AVANCAR;
-unsigned long tInicioAcao = 0;
+static EstadoAuto estado = AUTO_DRIVE;
+static unsigned long tInicioAcao = 0;
+static int tentativaAtual = 0;
+const int MAX_TENTATIVAS = 3; // evita loop infinito
 
 // ===================== AUXILIARES =================================
 
@@ -90,8 +95,17 @@ void atualizarSetores(float distancia, int angulo)
     }
 }
 
-// ===================== INICIALIZAÇÃO ===============================
+// Decide melhor lado olhando média dos setores -> preferir lado com maior distancia média
+Lado escolherMelhorLado(float dEsq, float dDir)
+{
+    if (dEsq > dDir + 5)
+        return LADO_ESQ; // margem pequena para estabilidade
+    if (dDir > dEsq + 5)
+        return LADO_DIR;
+    return LADO_INDEFINIDO; // se forem parecidos
+}
 
+// ===================== INICIALIZAÇÃO ============================
 void initAndarSozinho()
 {
     for (int i = 0; i < NUM_MEDIDAS; i++)
@@ -100,144 +114,206 @@ void initAndarSozinho()
     indiceEsq = indiceFrente = indiceDir = 0;
     tempoUltimoEscape = 0;
     contadorTravado = 0;
-    estadoAtual = AUTO_AVANCAR;
+    estado = AUTO_DRIVE;
+    tInicioAcao = millis();
+    tentativaAtual = 0;
+}
+
+// ===================== AÇÕES ====================================
+
+void iniciarCurvaLonga(Lado lado)
+{
+    // marca último lado para usar no escape, e posiciona servo no lado escolhido
+    if (lado == LADO_ESQ)
+    {
+        ultimoLadoCurva = LADO_ESQ;
+        setServoDirecao(ANGULO_ESQUERDA);
+    }
+    else
+    {
+        ultimoLadoCurva = LADO_DIR;
+        setServoDirecao(ANGULO_DIREITA);
+    }
+    moverMotor(VELOCIDADE_PADRAO);
     tInicioAcao = millis();
 }
 
-// ===================== ESTADOS NÃO BLOQUEANTES =====================
-
-void tratarEstadoAvancar(float dEsq, float dFrente, float dDir)
-{
-    moverMotor(VELOCIDADE_PADRAO);
-    setServoDirecao(ANGULO_CENTRO);
-
-    if (dFrente < DISTANCIA_MINIMA)
-    {
-        if (dEsq > dDir)
-        {
-            estadoAtual = AUTO_CURVA_ESQ;
-            tInicioAcao = millis();
-        }
-        else
-        {
-            estadoAtual = AUTO_CURVA_DIR;
-            tInicioAcao = millis();
-        }
-    }
-}
-
-void tratarEstadoCurvaEsq()
-{
-    setServoDirecao(ANGULO_ESQUERDA);
-    moverMotor(VELOCIDADE_PADRAO);
-
-    if (millis() - tInicioAcao >= TEMPO_CURVA_SUAVE)
-    {
-        estadoAtual = AUTO_AVANCAR;
-    }
-}
-
-void tratarEstadoCurvaDir()
-{
-    setServoDirecao(ANGULO_DIREITA);
-    moverMotor(VELOCIDADE_PADRAO);
-
-    if (millis() - tInicioAcao >= TEMPO_CURVA_SUAVE)
-    {
-        estadoAtual = AUTO_AVANCAR;
-    }
-}
-
-void tratarEstadoRecuo()
+void iniciarRecuoCurto()
 {
     moverMotor(-VELOCIDADE_PADRAO);
-
-    if (millis() - tInicioAcao >= TEMPO_RECUO)
-    {
-        if (ultimoLadoCurva == LADO_ESQ)
-            estadoAtual = AUTO_CURVA_DIR;
-        else
-            estadoAtual = AUTO_CURVA_ESQ;
-
-        tInicioAcao = millis();
-    }
+    tInicioAcao = millis();
 }
 
-void tratarEstadoEscape()
+void pararECentralizar()
 {
-    moverMotor(VELOCIDADE_PADRAO);
-    setServoDirecao(ultimoLadoCurva == LADO_ESQ ? ANGULO_DIREITA : ANGULO_ESQUERDA);
-
-    if (millis() - tInicioAcao >= TEMPO_CURVA_ESCAPE)
-    {
-        setServoDirecao(ANGULO_CENTRO);
-        estadoAtual = AUTO_AVANCAR;
-    }
+    moverMotor(0);
+    setServoDirecao(ANGULO_CENTRO);
 }
 
-// ===================== LOOP PRINCIPAL ==============================
+// ===================== LOOP PRINCIPAL ===========================
 
 void andarSozinhoLoop()
 {
+    // ATUALIZA SETORES (baseado no radar/laser — continua funcionando normalmente)
     int angulo = getPosicaoMedicao();
-    float distancia = lerDistanciaCm();
+    float leituraLaser = lerDistanciaCm();
+    atualizarSetores(leituraLaser, angulo);
 
-    atualizarSetores(distancia, angulo);
-
-    float dEsq = calcularMedia(setorEsquerdo);
-    float dFrente = calcularMedia(setorFrontal);
-    float dDir = calcularMedia(setorDireito);
+    // DETECÇÃO PRINCIPAL: usa o ULTRASSOM como detector frontal
+    float distUltra = lerDistanciaCmUltrasonico();
 
     unsigned long agora = millis();
 
-    // Detectar canto
+    // Se estiver em cooldown após um escape, evita reentrar
     bool emCooldown = (agora - tempoUltimoEscape < COOLDOWN_ESCAPE);
 
-    if (!emCooldown)
+    switch (estado)
     {
-        if (dFrente < DISTANCIA_MINIMA && dEsq < DISTANCIA_MINIMA && dDir < DISTANCIA_MINIMA)
-            contadorTravado++;
-        else
-            contadorTravado = 0;
+    case AUTO_DRIVE:
+        // Andar reto por padrão
+        moverMotor(VELOCIDADE_PADRAO);
+        setServoDirecao(ANGULO_CENTRO);
 
-        if (contadorTravado >= 4)
+        // Se ultrassom detectar obstáculo, para e passa para análise
+        if (distUltra > 0 && distUltra <= DISTANCIA_MINIMA && !emCooldown)
         {
-            estadoAtual = AUTO_RECUO;
+            pararECentralizar();
+            estado = AUTO_ANALISA;
             tInicioAcao = agora;
-            tempoUltimoEscape = agora;
-            contadorTravado = 0;
-            return;
+            tentativaAtual = 0;
         }
-    }
+        break;
 
-    switch (estadoAtual)
-    {
-    case AUTO_AVANCAR:
-        tratarEstadoAvancar(dEsq, dFrente, dDir);
+    case AUTO_ANALISA:
+        // Pausa rápida para garantir leituras estáveis
+        if (agora - tInicioAcao < 50)
+            break;
+
+        // Calcula médias dos setores (laser) para decidir melhor lado
+        {
+            float dEsq = calcularMedia(setorEsquerdo);
+            float dDir = calcularMedia(setorDireito);
+
+            Lado melhor = escolherMelhorLado(dEsq, dDir);
+
+            // Se não tiver uma diferença clara, escolhe lado oposto ao último ou tenta ambos
+            if (melhor == LADO_INDEFINIDO)
+            {
+                // tenta o lado menos usado (inverte o último)
+                melhor = (ultimoLadoCurva == LADO_ESQ) ? LADO_DIR : LADO_ESQ;
+            }
+
+            // inicia curva longa para o lado escolhido
+            iniciarCurvaLonga(melhor);
+            estado = AUTO_CURVA_LONGA;
+            tInicioAcao = agora;
+        }
         break;
-    case AUTO_CURVA_ESQ:
-        tratarEstadoCurvaEsq();
+
+    case AUTO_CURVA_LONGA:
+        // Executa a curva por TEMPO_CURVA_LONGA ms
+        if (agora - tInicioAcao < TEMPO_CURVA_LONGA)
+        {
+            // manter movimento e direção (já definido em iniciarCurvaLonga)
+            break;
+        }
+        else
+        {
+            // terminou curva longa — agora verifica se ainda há obstáculo
+            moverMotor(0); // pausa rápido
+            tInicioAcao = agora;
+            estado = AUTO_VERIFICA;
+        }
         break;
-    case AUTO_CURVA_DIR:
-        tratarEstadoCurvaDir();
+
+    case AUTO_VERIFICA:
+        // espera um pouco para estabilidade e lê ultrassom
+        if (agora - tInicioAcao < TEMPO_REAVALIACAO)
+            break;
+
+        distUltra = lerDistanciaCmUltrasonico();
+
+        // se limpou o caminho -> retomar em frente
+        if (distUltra < 0 || distUltra > DISTANCIA_MINIMA)
+        {
+            // sucesso: centraliza e segue
+            setServoDirecao(ANGULO_CENTRO);
+            moverMotor(VELOCIDADE_PADRAO);
+            estado = AUTO_DRIVE;
+            tempoUltimoEscape = agora;
+            tentativaAtual = 0;
+        }
+        else
+        {
+            // ainda obstruído -> incrementa tentativa e tenta "ré + curva oposta" ou repetir
+            tentativaAtual++;
+            if (tentativaAtual <= MAX_TENTATIVAS)
+            {
+                // dá ré curto e tenta o outro lado
+                iniciarRecuoCurto();
+                estado = AUTO_RECUA;
+                tInicioAcao = agora;
+            }
+            else
+            {
+                // muitas tentativas -> fallback (ré maior e virar 180 ou para segurança)
+                estado = AUTO_FALLBACK;
+                tInicioAcao = agora;
+            }
+        }
         break;
-    case AUTO_RECUO:
-        tratarEstadoRecuo();
+
+    case AUTO_RECUA:
+        if (agora - tInicioAcao < TEMPO_RECUO)
+        {
+            // ainda ré
+            break;
+        }
+        else
+        {
+            // terminou ré -> tenta curva no outro lado (oposto ao ultimo)
+            Lado oposto = (ultimoLadoCurva == LADO_ESQ) ? LADO_DIR : LADO_ESQ;
+            iniciarCurvaLonga(oposto);
+            estado = AUTO_CURVA_LONGA;
+            tInicioAcao = agora;
+        }
         break;
-    case AUTO_ESCAPE:
-        tratarEstadoEscape();
+
+    case AUTO_FALLBACK:
+        // Procedimento de segurança/recuperação: faz ré maior e centraliza, depois tenta andar devagar
+        if (agora - tInicioAcao < (unsigned long)(TEMPO_RECUO * 3))
+        {
+            moverMotor(-VELOCIDADE_PADRAO);
+        }
+        else
+        {
+            // Depois de ré maior tenta girar levemente para o lado oposto e avançar lentamente
+            setServoDirecao((ultimoLadoCurva == LADO_ESQ) ? ANGULO_DIREITA : ANGULO_ESQUERDA);
+            moverMotor(VELOCIDADE_PADRAO / 2);
+            delay(150); // pequena manobra controlada
+            setServoDirecao(ANGULO_CENTRO);
+            moverMotor(VELOCIDADE_PADRAO / 2);
+            estado = AUTO_DRIVE;
+            tempoUltimoEscape = agora;
+            tentativaAtual = 0;
+        }
         break;
-    }
+    } // fim switch
 }
 
+// Dispara/desliga modo autônomo
 void ligaDesligaAutonomo(int v)
 {
     modoAutonomoAtivo = (v == 1);
-
     if (!modoAutonomoAtivo)
     {
         moverMotor(0);
         setServoDirecao(SERVO_CENTRO);
-        estadoAtual = AUTO_AVANCAR;
+        estado = AUTO_DRIVE;
+    }
+    else
+    {
+        // reset estados quando ligar
+        initAndarSozinho();
     }
 }
