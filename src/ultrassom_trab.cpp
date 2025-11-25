@@ -1,3 +1,6 @@
+
+#include "config.h"
+
 #include "ultrassom_trab.h"
 
 // TRIG e ECHO definidos no config.h
@@ -6,7 +9,7 @@
 // #define HCSR04_DIST_MAX_CM 200
 // #define HCSR04_DIST_MIN_CM 5
 
-void initUltrassom()
+bool initUltrassom()
 {
     pinMode(HCSR04_TRIG_PIN, OUTPUT);
     pinMode(HCSR04_ECHO_PIN, INPUT);
@@ -15,9 +18,10 @@ void initUltrassom()
     digitalWrite(HCSR04_TRIG_PIN, LOW);
 
     delay(50); // estabilização
+    return true;
 }
 
-float lerDistanciaCm()
+float lerDistanciaCmUltrasonico()
 {
     // Envia pulso de trigger
     digitalWrite(HCSR04_TRIG_PIN, LOW);
@@ -33,9 +37,15 @@ float lerDistanciaCm()
     if (duracao == 0)
         return -1.0f; // sem eco / timeout
 
-    // Fórmula clássica: distância (cm) = tempo(us) / 58
-    float distancia = duracao / 58.0f;
+    const float FATOR_CALIBRACAO = 1.26f;
 
+    // Fórmula clássica: distância (cm) = tempo(us) / 58
+    float distancia_f = duracao / 58.0f;
+
+    distancia_f = distancia_f * FATOR_CALIBRACAO;
+    int distancia = (int)distancia_f;
+
+    distancia = (distancia % 2 == 0) ? distancia : distancia + 1;
     // Limita dentro da faixa útil
     if (distancia < HCSR04_DIST_MIN_CM)
         distancia = HCSR04_DIST_MIN_CM;

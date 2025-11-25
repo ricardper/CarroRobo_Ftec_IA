@@ -1,20 +1,22 @@
 
-#ifndef _ANDAR_SOZINHO_H
-#define _ANDAR_SOZINHO_H
+#ifndef ANDAR_SOZINHO_H
+#define ANDAR_SOZINHO_H
 
 #include <Arduino.h>
 #include "config.h"
-#include "serial_trab.h"
+#include "servo_trab.h"
 #include "motorDc.h"
 
-/*
-adcionar os prototipos das funcoes aqui.
-ex.
+#include "sensorDistanciaLaser.h"
 
-void desviarObstaculo();
+#include "ultrassom_trab.h"
 
-*/
+extern bool modoAutonomoAtivo;
+// Inicializa buffers, índices e estado
+void initAndarSozinho();
 
-void desviarObstaculo();
+// Loop principal chamado na main()
+void andarSozinhoLoop();
+void ligaDesligaAutonomo(int v);
 
 #endif

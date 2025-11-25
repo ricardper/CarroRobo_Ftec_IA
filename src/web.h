@@ -88,29 +88,40 @@ static const char *htmlHomePage = R"HTMLHOMEPAGE(
            style="width:400px;margin:auto;table-layout:fixed"
            CELLSPACING=8>
 
+      <!-- Caixa empilhada: Radar / Ultra -->
       <tr>
-  <td colspan="3">
-    <div id="distBox"
-         style="width:300px;height:60px;margin:auto;
-                background:#222;color:#00ff00;
-                font-family:monospace;font-size:22px;
-                border:1px solid #444;border-radius:6px;
-                display:flex;align-items:center;justify-content:center;">
-      
-      <div style="display:flex;gap:8px;align-items:center;">
-        <span>Distância:</span>
-        <span id="distValor"
-              style="display:inline-block;width:70px;text-align:center;">
-          --- 
-        </span>
-        <span>cm</span>
-      </div>
+        <td colspan="3">
+          <div id="distBox"
+               style="width:300px;margin:auto;
+                      background:#222;color:#00ff00;
+                      font-family:monospace;font-size:14px;
+                      border:1px solid #444;border-radius:6px;
+                      display:flex;flex-direction:column;
+                      padding:6px;gap:6px;">
 
-    </div>
-  </td>
-</tr>
+            <!-- Linha Radar -->
+            <div style="display:flex;gap:8px;justify-content:center;align-items:center;">
+              <span>Radar:</span>
+              <span id="distValor"
+                    style="display:inline-block;width:60px;text-align:center;">
+                ---
+              </span>
+              <span>cm</span>
+            </div>
 
+            <!-- Linha Ultra -->
+            <div style="display:flex;gap:8px;justify-content:center;align-items:center;">
+              <span>Ultra:</span>
+              <span id="distUltra"
+                    style="display:inline-block;width:60px;text-align:center;">
+                ---
+              </span>
+              <span>cm</span>
+            </div>
 
+          </div>
+        </td>
+      </tr>
 
       <!-- ===================== RADAR CANVAS ======================= -->
       <tr>
@@ -195,7 +206,7 @@ static const char *htmlHomePage = R"HTMLHOMEPAGE(
       <!-- Console -->
       <tr><td colspan="3"><div id="console"></div></td></tr>
 
-      <!-- Comandos -->
+      <!-- Comandos + botões de controle -->
       <tr>
         <td colspan="3">
           <input id="comandoTxt" placeholder="Digite um comando..."
@@ -220,39 +231,42 @@ static const char *htmlHomePage = R"HTMLHOMEPAGE(
         </td>
       </tr>
 
+      <!-- Botão extra: Andar Sozinho -->
+      <tr>
+        <td colspan="3" style="padding-top:4px;">
+          <button onclick="toggleAuto()"
+                  style="width:140px;height:32px;background-color:#FF9800;
+                         color:white;border:none;border-radius:5px;">
+            Andar Sozinho
+          </button>
+        </td>
+      </tr>
+
     </table>
 
     <!-- ====================== SCRIPT RADAR ====================== -->
 
     <script>
 
-
-
-
-
       // ----------------- PARÂMETROS DO RADAR -----------------
       const RADAR_MAX_CM       = 200;   // mesma config do HC-SR04
       const MAX_POINTS         = 400;   // mais pontos por causa do passo 2
-      const POINT_LIFETIME_MS  = 2000; // ~tempo de 1 volta completa
+      const POINT_LIFETIME_MS  = 2000;  // ~tempo de 1 volta completa
 
       let radarPoints    = [];
       let radarLastAngle = 0;
 
-function updateDistanciaPainel(dist){
-    const campo = document.getElementById("distValor");
+      function updateDistanciaPainel(dist){
+        const campo = document.getElementById("distValor");
 
-    // Mostra "---" se -1
-    if(dist < 0){
-        campo.textContent = "---";
-    } else {
-        // Formatação fixa com 1 casa dec., largura estável
-        campo.textContent = dist.toFixed(1).padStart(4, ' ');
-    }
-}
-
-
-
-
+        // Mostra "---" se -1
+        if(dist < 0){
+          campo.textContent = "---";
+        } else {
+          // Formatação fixa com 1 casa dec., largura estável
+          campo.textContent = dist.toFixed(1).padStart(4, ' ');
+        }
+      }
 
       function drawRadar(){
         const canvas = document.getElementById("radarCanvas");
@@ -366,6 +380,14 @@ function updateDistanciaPainel(dist){
             return;
           }
 
+          // mensagem do ultrassônico: "ultra,NN"
+          if(key === "ultra"){
+            let u = parseFloat(p[1]);
+            document.getElementById("distUltra").textContent =
+                (u < 0 ? "---" : u.toFixed(0));
+            return;
+          }
+
           if(key === "console"){
             appendToConsole(p.slice(1).join(","));
             return;
@@ -420,6 +442,15 @@ function updateDistanciaPainel(dist){
         sendButtonInput("debug", (debugLigado ? 1 : 0));
         appendToConsole("Debug: " +
                         (debugLigado ? "ligado" : "desligado"));
+      }
+
+      // --------- NOVO: botão Andar Sozinho ---------
+      let autoLigado = false;
+      function toggleAuto(){
+        autoLigado = !autoLigado;
+        sendButtonInput("auto", (autoLigado ? 1 : 0));
+        appendToConsole("Andar sozinho: " +
+                        (autoLigado ? "ligado" : "desligado"));
       }
 
       window.onload = initWS;
