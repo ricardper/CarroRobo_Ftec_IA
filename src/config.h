@@ -9,6 +9,7 @@
 #define MOTOR_ENA_PIN 25
 #define MOTOR_IN1_PIN 33
 #define MOTOR_IN2_PIN 32
+#define VELOCIDADE_PADRAO_MOTOR_DC 50
 
 // Velocidade do PWM do motor
 #define MOTOR_PWM_CHANNEL 0
@@ -25,7 +26,7 @@
 #define SERVO_ADICAO_SUBTRACAO 5 // incremento dos botões
 
 // ======================= SERVO MEDIÇÃO ============================
-#define SERVO_MEDICAO_PASSO 4
+#define SERVO_MEDICAO_PASSO 18
 #define RADAR_MIN_ANGULO 0
 #define RADAR_MAX_ANGULO 180
 
@@ -45,7 +46,7 @@
 #define HCSR04_DIST_MIN_CM 10
 
 #define VL53L0X_DIST_MAX_CM 200
-#define VL53L0X_DIST_MIN_CM 5
+#define VL53L0X_DIST_MIN_CM 3
 
 #define I2C_SDA_PIN 5
 #define I2C_SCL_PIN 4

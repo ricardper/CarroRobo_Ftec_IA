@@ -2,6 +2,8 @@
 
 #define _MOTOR_DC_H
 #include <Arduino.h>
+
+#include "watchdog_trab.h"
 #include "config.h"
 #include <L293D.h>
 #include "webControl_trab.h"
@@ -23,7 +25,7 @@ void initMotoDc();
 
 void moverFrente(int valor);
 
-void moverTraz(int valor);
+void moverRe(int valor);
 
 void moverMotor(int valor);
 

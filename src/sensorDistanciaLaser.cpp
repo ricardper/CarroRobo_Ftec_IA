@@ -56,7 +56,7 @@ float lerDistanciaCm()
     // A Adafruit VL53L0X usa o status 4 para indicar falha/fora de alcance
     if (measure.RangeStatus == 4)
     {
-        return -1.0f; // Retorna -1.0f em caso de erro/timeout, compatível com a interface
+        return 200; // Retorna -1.0f em caso de erro/timeout, compatível com a interface
     }
 
     // A leitura já está em milímetros (mm). Converte para centímetros (cm).
@@ -65,8 +65,8 @@ float lerDistanciaCm()
     // A leitura já está em milímetros (mm). Converte para centímetros (cm) SEM DECIMAL
     int distancia_cm = measure.RangeMilliMeter / 10;
 
-    // Garante que seja número PAR
-    // distancia_cm = distancia_cm - (distancia_cm % 2);
+    // Garante que seja número multiplo de 5
+
     distancia_cm = ((distancia_cm + 2) / 5) * 5;
 
     // Aplica os limites de faixa útil para compatibilidade de interface

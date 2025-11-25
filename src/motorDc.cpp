@@ -21,7 +21,8 @@ void initMotoDc()
 // ============ Aplica velocidade no motor ===========
 void moverMotor(int velocidade)
 {
-    // Clamping absoluto
+    // feedMotorWDT();
+    //  Clamping absoluto
     if (velocidade > 100)
         velocidade = 100;
     if (velocidade < -100)
@@ -54,7 +55,7 @@ void moverMotor(int velocidade)
     // Atualiza slider na homepage
     enviaDadosClientes("Velocidade", velocidade);
 
-    logTrab("Velocidade antes " + String(ultimaVelocidade) + " agora " + String(velocidade));
+    // logTrab("Velocidade antes " + String(ultimaVelocidade) + " agora " + String(velocidade));
 
     ultimaVelocidade = velocidade;
 }
@@ -68,6 +69,15 @@ void addVelocidade()
 void subVelocidade()
 {
     moverMotor(ultimaVelocidade - INCREMENTO_MOTOR_DC);
+}
+
+void moverRe(int valor)
+{
+    moverMotor(-valor);
+}
+void moverFrente(int valor)
+{
+    moverMotor(valor);
 }
 
 void deslMotor()
