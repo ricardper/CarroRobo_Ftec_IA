@@ -129,8 +129,31 @@ static void onWsEvent(AsyncWebSocket *server,
         else if (comando == "auto")
         {
             // Aqui você integra com sua biblioteca de "andar sozinho"
+            // ligaDesligaMedicao(valor);
             ligaDesligaAutonomo(valor);
             logTrab(String("andar sozinho: ") + (valor == 1 ? "LIGADO" : "DESLIGADO"));
+        }
+        else if (comando == "recuodireita" || comando == "Recuodireita" || comando == "Rd")
+        {
+            macroRecuoCurvaDireita(valor);
+            logTrab(" Recuo para a direita");
+        }
+        else if (comando == "recuoesquerda" || comando == "Recuoesquerda" || comando == "Re")
+        {
+            macroRecuoCurvaEsquerda(valor);
+            logTrab(" Recuo para a esquerda");
+        }
+        else if (comando == "curvaesquerda" || comando == "Curvaesquerda" || comando == "Ce")
+        {
+
+            macroCurvaEsquerda(valor);
+            logTrab(" curva a esquerda");
+        }
+        else if (comando == "curvadireita" || comando == "Curva direita" || comando == "Cd")
+        {
+
+            macroCurvaDireita(valor);
+            logTrab(" curva a direita");
         }
 
         // ------------------- DESCONHECIDO -------------------------

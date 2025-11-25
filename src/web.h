@@ -196,7 +196,7 @@ static const char *htmlHomePage = R"HTMLHOMEPAGE(
           <b>Direção:</b><span id="DirecaoValor">0</span>
         </td>
         <td colspan="2">
-          <input type="range" min="30" max="140" step="5" value="85"
+          <input type="range" min="30" max="140" step="5" value="75"
                  class="slider" id="Direcao"
                  oninput='sendButtonInput("Direcao",value);
                           updateSliderValue("Direcao", value);'>
